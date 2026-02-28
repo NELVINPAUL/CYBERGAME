@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Cyber Dodge!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #020408;
+            color: #00ffff;
+            font-family: 'Share Tech Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridMove 8s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 40px; }
+        }
+
+        #title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 10px #00ffff, 0 0 30px #00ffff, 0 0 60px #00ffff;
+            margin-bottom: 4px;
+            letter-spacing: 4px;
+            z-index: 1;
+        }
+
+        #sub-text {
+            font-size: 0.7rem;
+            color: #336666;
+            margin-bottom: 8px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            z-index: 1;
+        }
+
+        #ui {
+            margin-bottom: 6px;
+            font-size: 1rem;
+            color: #00ffff;
+            letter-spacing: 2px;
+            z-index: 1;
+            transition: color 0.3s;
+        }
+
+        #powerup-status {
+            height: 20px;
+            font-size: 0.75rem;
+            color: #ffff00;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            z-index: 1;
+            min-height: 18px;
+        }
+
+        #game-container {
+            position: relative;
+            border: 1px solid #00ffff;
+            box-shadow: 0 0 20px #00ffff44, 0 0 60px #00ffff11, inset 0 0 20px #00ffff08;
+            z-index: 1;
+        }
+
+        canvas {
+            display: block;
+            background: #000;
+            max-width: 95vw;
+            max-height: 50vh;
+        }
+
+        #pause-btn {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 0;
+        }
+        .pause-bar {
+            width: 4px;
+            height: 16px;
+            background: #00ffff;
+            border-radius: 1px;
+            display: block;
+        }
+
+        #pause-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 18;
+            gap: 16px;
+        }
+
+        #pause-overlay h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #00ffff;
+            font-size: 2rem;
+            text-shadow: 0 0 20px #00ffff;
+            letter-spacing: 6px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #pause-overlay p {
+            color: #445566;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+        }
+
+        #resume-btn {
+            padding: 10px 28px;
+            font-size: 0.9rem;
+            background: #00ffff;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            gap: 10px;
+        }
+
+        #overlay h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #ff0055;
+            font-size: 2rem;
+            text-shadow: 0 0 20px #ff0055;
+            letter-spacing: 4px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #final-score {
+            font-size: 1rem;
+            color: #00ffff;
+            letter-spacing: 2px;
+        }
+
+        button#restartBtn {
+            padding: 10px 25px;
+            font-size: 0.9rem;
+            background: #00ffff;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .controls {
+            display: flex;
+            width: 100%;
+            max-width: 400px;
+            justify-content: space-between;
+            margin-top: 10px;
+            z-index: 1;
+        }
+
+        .ctrl-btn {
+            width: 45%; height: 65px;
+            background: #050505;
+            border: 1px solid #00ffff44;
+            color: #00ffff;
+            font-size: 1.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .ctrl-btn:active { background: #00ffff22; }
+
+        #legend {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+            z-index: 1;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .legend-item {
+            font-size: 0.6rem;
+            color: #445566;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .legend-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        #made-by {
+            font-size: 0.8rem;
+            color: #336666;
+            margin-top: 9px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="title">CYBER DODGE</div>
+    <p id="sub-text">Survive the grid</p>
+    <div id="ui">Score: <span id="score">0</span> &nbsp;|&nbsp; Best: <span id="best">0</span></div>
+    <div id="powerup-status"></div>
+
+    <div id="game-container">
+        <button id="pause-btn" title="Pause (P)">
+            <span class="pause-bar"></span>
+            <span class="pause-bar"></span>
+        </button>
+        <canvas id="gameCanvas" width="300" height="480"></canvas>
+
+        <div id="pause-overlay">
+            <h2>PAUSED</h2>
+            <p>PRESS P OR CLICK TO RESUME</p>
+            <button id="resume-btn">▶ RESUME</button>
+        </div>
+
+        <div id="overlay">
+            <h2>GAME OVER</h2>
+            <div id="final-score"></div>
+            <button id="restartBtn">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="ctrl-btn" id="btnLeft">◀</button>
+        <button class="ctrl-btn" id="btnRight">▶</button>
+    </div>
+
+    <div id="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#3366ff"></span> SHIELD</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ffff00"></span> SLOW</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff8800"></span> 2× POINTS</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#00ff88"></span> CLEAR</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff44ff"></span> MINI</span>
+    </div>
+
+    <div id="made-by">CREATED WITH HELP OF CLAUDE AI</div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreEl = document.getElementById("score");
+        const bestEl = document.getElementById("best");
+        const uiEl = document.getElementById("ui");
+        const overlay = document.getElementById("overlay");
+        const pauseOverlay = document.getElementById("pause-overlay");
+        const pauseBtn = document.getElementById("pause-btn");
+        const statusEl = document.getElementById("powerup-status");
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        let player, enemies, powerupItems, particles;
+        let score, localBest, gameActive, speed;
+        let spawnTimer, powerupTimer;
+        let activeEffects = {};
+        let effectTimers = {};
+        let isPaused = false;
+
+        localBest = 0;
+
+        function playSound(freq, type, duration, vol = 0.05) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const POWERUP_TYPES = [
+            { id: 'shield',       color: '#3366ff', label: '🛡 SHIELD',       duration: 5000 },
+            { id: 'slow',         color: '#ffff00', label: '⏱ SLOW TIME',     duration: 4000 },
+            { id: 'doublePoints', color: '#ff8800', label: '✦ DOUBLE PTS',    duration: 6000 },
+            { id: 'clear',        color: '#00ff88', label: '💥 SCREEN CLEAR', duration: 0    },
+            { id: 'mini',         color: '#ff44ff', label: '◈ MINI PLAYER',   duration: 5000 },
+        ];
+
+        function activatePowerup(type) {
+            if (effectTimers[type.id]) clearTimeout(effectTimers[type.id]);
+            playSound(800, 'square', 0.15, 0.04);
+            if (type.id === 'clear') {
+                enemies.forEach(e => spawnParticles(e.x + e.w/2, e.y + e.h/2, '#00ff88', 8));
+                enemies = [];
+                score += 3;
+                scoreEl.innerText = score;
+                statusEl.textContent = '💥 SCREEN CLEARED!';
+                setTimeout(() => { if (statusEl.textContent.includes('CLEARED')) statusEl.textContent = ''; }, 1500);
+                return;
+            }
+            activeEffects[type.id] = true;
+            statusEl.textContent = type.label;
+            effectTimers[type.id] = setTimeout(() => {
+                activeEffects[type.id] = false;
+                statusEl.textContent = '';
+            }, type.duration);
+        }
+
+        function spawnParticles(x, y, color, count = 6) {
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+                const spd = 1.5 + Math.random() * 2.5;
+                particles.push({ x, y, vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd, life: 1, color });
+            }
+        }
+
+        function togglePause() {
+            if (!gameActive) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseBtn.innerHTML = `<span style="width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:14px solid #00ffff;display:block;margin-left:3px"></span>`;
+                pauseOverlay.style.display = 'flex';
+            } else {
+                pauseBtn.innerHTML = `<span class="pause-bar"></span><span class="pause-bar"></span>`;
+                pauseOverlay.style.display = 'none';
+                requestAnimationFrame(update);
+            }
+        }
+
+        pauseBtn.onclick = togglePause;
+        document.getElementById("resume-btn").onclick = togglePause;
+
+        // --- Draw spaceship (player) ---
+        function drawSpaceship(x, y, w, h, color) {
+            const cx = x + w / 2;
+            const cy = y + h / 2;
+            const hw = w / 2;
+            const hh = h / 2;
+
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+
+            // Main body (triangle pointing up)
+            ctx.beginPath();
+            ctx.moveTo(cx, y);               // nose tip
+            ctx.lineTo(x + w, y + h);        // bottom-right
+            ctx.lineTo(x + w * 0.65, y + h * 0.7); // inner-right
+            ctx.lineTo(cx, y + h * 0.85);    // bottom-center
+            ctx.lineTo(x + w * 0.35, y + h * 0.7); // inner-left
+            ctx.lineTo(x, y + h);            // bottom-left
+            ctx.closePath();
+            ctx.fill();
+
+            // Cockpit highlight
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath();
+            ctx.ellipse(cx, y + hh * 0.7, hw * 0.22, hh * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Engine glow
+            const glow = ctx.createRadialGradient(cx, y + h, 0, cx, y + h, hw * 0.7);
+            glow.addColorStop(0, color);
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.ellipse(cx, y + h, hw * 0.4, hh * 0.18, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- Draw asteroid (enemy) ---
+        function drawAsteroid(e, color) {
+            const cx = e.x + e.w / 2;
+            const cy = e.y + e.h / 2;
+            const r = e.w / 2;
+            const verts = e.verts; // pre-generated vertices
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(e.rot || 0);
+
+            ctx.beginPath();
+            ctx.moveTo(verts[0].x, verts[0].y);
+            for (let i = 1; i < verts.length; i++) {
+                ctx.lineTo(verts[i].x, verts[i].y);
+            }
+            ctx.closePath();
+
+            // Fill with dark rocky color + tint
+            ctx.fillStyle = '#1a0a0a';
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Crater details
+            ctx.strokeStyle = 'rgba(255,80,80,0.3)';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.arc(-r * 0.25, -r * 0.2, r * 0.2, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(r * 0.2, r * 0.15, r * 0.12, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // Generate random asteroid vertices
+        function genAsteroidVerts(r, count = 9) {
+            const verts = [];
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.5;
+                const dist = r * (0.6 + Math.random() * 0.4);
+                verts.push({ x: Math.cos(angle) * dist, y: Math.sin(angle) * dist });
+            }
+            return verts;
+        }
+
+        function init() {
+            player = { x: 135, y: 430, w: 30, h: 30 };
+            enemies = []; powerupItems = []; particles = [];
+            score = 0; speed = 3; spawnTimer = 0;
+            powerupTimer = Math.floor(Math.random() * 300) + 400;
+            gameActive = true; isPaused = false;
+            activeEffects = {};
+            Object.values(effectTimers).forEach(t => clearTimeout(t));
+            effectTimers = {};
+            uiEl.style.color = "#00ffff";
+            scoreEl.innerText = score;
+            bestEl.innerText = localBest;
+            statusEl.textContent = '';
+            overlay.style.display = "none";
+            pauseOverlay.style.display = "none";
+            pauseBtn.innerHTML = `<span class="pause-bar"></span><span class="pause-bar"></span>`;
+        }
+
+        function update() {
+            if (!gameActive || isPaused) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const effectiveSpeed = activeEffects.slow ? speed * 0.4 : speed;
+            player.w = activeEffects.mini ? 16 : 30;
+            player.h = activeEffects.mini ? 16 : 30;
+
+            spawnTimer++;
+            const spawnRate = Math.max(35, 90 - Math.floor(score / 3));
+            if (spawnTimer > spawnRate) {
+                const count = score > 60 ? 2 : 1;
+                for (let c = 0; c < count; c++) {
+                    const w = 18 + Math.random() * 16;
+                    enemies.push({
+                        x: Math.random() * (canvas.width - w), y: -30, w, h: w,
+                        zigzag: score > 40 && Math.random() < 0.25,
+                        phase: Math.random() * Math.PI * 2,
+                        rot: 0,
+                        rotSpeed: (Math.random() - 0.5) * 0.04,
+                        verts: genAsteroidVerts(w / 2)
+                    });
+                }
+                spawnTimer = 0;
+            }
+
+            powerupTimer--;
+            if (powerupTimer <= 0) {
+                const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+                powerupItems.push({ x: 20 + Math.random() * (canvas.width - 40), y: -20, r: 10, type });
+                powerupTimer = Math.floor(Math.random() * 400) + 350;
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.life -= 0.035;
+                if (p.life <= 0) { particles.splice(i, 1); continue; }
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+                ctx.globalAlpha = 1;
+            }
+
+            // Draw player as spaceship
+            let playerColor = '#00ffff';
+            if (activeEffects.shield) playerColor = Date.now() % 200 < 100 ? '#ffffff' : '#3366ff';
+            else if (activeEffects.mini) playerColor = '#ff44ff';
+            else if (activeEffects.doublePoints) playerColor = '#ffaa00';
+            ctx.shadowBlur = 15; ctx.shadowColor = playerColor;
+            drawSpaceship(player.x, player.y, player.w, player.h, playerColor);
+
+            for (let i = powerupItems.length - 1; i >= 0; i--) {
+                const p = powerupItems[i];
+                p.y += effectiveSpeed * 0.6;
+                const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 200);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = p.type.color; ctx.shadowColor = p.type.color; ctx.shadowBlur = 12;
+                ctx.fill();
+                if (player.x < p.x + p.r && player.x + player.w > p.x - p.r &&
+                    player.y < p.y + p.r && player.y + player.h > p.y - p.r) {
+                    activatePowerup(p.type);
+                    spawnParticles(p.x, p.y, p.type.color, 10);
+                    powerupItems.splice(i, 1);
+                } else if (p.y > canvas.height + 20) {
+                    powerupItems.splice(i, 1);
+                }
+            }
+
+            // Draw enemies as asteroids
+            ctx.shadowColor = '#ff0055'; ctx.shadowBlur = 10;
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                if (e.zigzag) e.x += Math.sin(Date.now() / 200 + e.phase) * 1.5;
+                e.x = Math.max(0, Math.min(canvas.width - e.w, e.x));
+                e.y += effectiveSpeed;
+                e.rot = (e.rot || 0) + e.rotSpeed;
+
+                drawAsteroid(e, '#ff0055');
+
+                if (player.x < e.x + e.w && player.x + player.w > e.x &&
+                    player.y < e.y + e.h && player.y + player.h > e.y) {
+                    if (!activeEffects.shield) {
+                        gameActive = false;
+                        spawnParticles(player.x + player.w/2, player.y + player.h/2, '#ff0055', 20);
+                        if (score > localBest) { localBest = score; bestEl.innerText = localBest; }
+                        playSound(80, 'sawtooth', 0.5, 0.08);
+                        setTimeout(() => {
+                            document.getElementById("final-score").textContent = `SCORE: ${score}`;
+                            overlay.style.display = "flex";
+                        }, 400);
+                        return;
+                    }
+                }
+
+                if (e.y > canvas.height) {
+                    enemies.splice(i, 1);
+                    const pts = activeEffects.doublePoints ? 2 : 1;
+                    score += pts;
+                    scoreEl.innerText = score;
+                    speed += 0.02;
+                    if (score > localBest) { localBest = score; bestEl.innerText = localBest; }
+                    playSound(500 + score * 2, 'sine', 0.04, 0.03);
+                }
+            }
+
+            ctx.shadowBlur = 0;
+            requestAnimationFrame(update);
+        }
+
+        const moveLeft = () => {
+            if (!gameActive || isPaused) return;
+            player.x -= 30;
+            if (player.x < 0) {
+                player.x = canvas.width - player.w;
+                playSound(300, 'sine', 0.08, 0.03);
+            }
+        };
+        const moveRight = () => {
+            if (!gameActive || isPaused) return;
+            player.x += 30;
+            if (player.x >= canvas.width) {
+                player.x = 0;
+                playSound(300, 'sine', 0.08, 0.03);
+            }
+        };
+
+        document.getElementById("btnLeft").addEventListener('pointerdown', moveLeft);
+        document.getElementById("btnRight").addEventListener('pointerdown', moveRight);
+
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft") moveLeft();
+            if (e.key === "ArrowRight") moveRight();
+            if (e.key === "p" || e.key === "P" || e.key === "Escape") togglePause();
+        });
+
+        document.getElementById("restartBtn").onclick = () => {
+            init();
+            requestAnimationFrame(update);
+        };
+
+        init();
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>
